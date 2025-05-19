@@ -5,7 +5,6 @@
 
 using namespace std;
 
-// Самописный вектор
 template <typename T>
 class vektor {
 private:
@@ -183,7 +182,7 @@ struct Data {
         cout << "ФИО: " << name << endl;
         cout << "Адрес: " << adres << endl;
         cout << "Номер заявки: " << number << endl;
-        cout << "Позиция в исходном файле: " << pos << endl;
+        cout << "Позиция в исходном файле: " << pos +1 << endl;
         cout << "-----------------------------" << endl;
     }
 };
@@ -220,7 +219,7 @@ class HashTable {
 
 public:
     HashTable(int sz) : size(sz) {
-        table.resize(size);  // ← метод resize уже есть в vektor
+        table.resize(size);
         for (int i = 0; i < size; ++i) {
             table[i].status = 0;
         }
