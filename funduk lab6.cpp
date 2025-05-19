@@ -197,7 +197,7 @@ class HashTable {
         int status; // 0 - свободно, 1 - занято
     };
 
-    Entry* table;
+    vektor<Entry> table;
     int size;
 
     // Хеш-функция (середина квадрата)
@@ -220,13 +220,10 @@ class HashTable {
 
 public:
     HashTable(int sz) : size(sz) {
-        table = new Entry[size];
-        for (int i = 0; i < size; ++i)
+        table.resize(size);  // ← метод resize уже есть в vektor
+        for (int i = 0; i < size; ++i) {
             table[i].status = 0;
-    }
-
-    ~HashTable() {
-        delete[] table;
+        }
     }
 
     bool insert(const Data& d) {
@@ -338,6 +335,7 @@ int main() {
     cin >> key.second_name;
     cin >> int_key;
     cout << endl;
+
     string str_key = key.union_name();
     int steps;
     const Data* found = ht.search(str_key, int_key, steps);
