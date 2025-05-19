@@ -330,9 +330,17 @@ int main() {
     HashTable ht(100);
 
     ht.loadFromFile("input.txt");
-
+    cout << "Введите ключ:" << endl;
+    Full_Name key;
+    int int_key = 0;
+    cin >> key.last_name;
+    cin >> key.first_name;
+    cin >> key.second_name;
+    cin >> int_key;
+    cout << endl;
+    string str_key = key.union_name();
     int steps;
-    const Data* found = ht.search("DdbbdBdbbdAeccd", 42, steps);
+    const Data* found = ht.search(str_key, int_key, steps);
     if (found) {
         cout << "Найдено за " << steps << " шагов:\n";
         found->print();
