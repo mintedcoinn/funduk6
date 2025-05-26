@@ -5,59 +5,6 @@
 
 using namespace std;
 
-template <typename T>
-class vektor {
-private:
-    T* data;
-    int capacity;
-    int count;
-
-public:
-    vektor() : data(nullptr), capacity(0), count(0) {}
-
-    ~vektor() {
-        delete[] data;
-    }
-
-    void push_back(const T& value) {
-        if (count >= capacity) {
-            int new_capacity = max(1, capacity * 2);
-            T* new_data = new T[new_capacity];
-            for (int i = 0; i < count; i++) {
-                new_data[i] = data[i];
-            }
-            delete[] data;
-            data = new_data;
-            capacity = new_capacity;
-        }
-        data[count++] = value;
-    }
-
-    T& operator[](int index) {
-        return data[index];
-    }
-
-    const T& operator[](int index) const {
-        return data[index];
-    }
-
-    int size() const {
-        return count;
-    }
-
-    void resize(int new_size) {
-        if (new_size > capacity) {
-            T* new_data = new T[new_size];
-            for (int i = 0; i < count; i++) {
-                new_data[i] = data[i];
-            }
-            delete[] data;
-            data = new_data;
-            capacity = new_size;
-        }
-        count = new_size;
-    }
-};
 
 class PhoneNumber {
 public:
@@ -185,25 +132,51 @@ struct Data {
         cout << "Позиция в исходном файле: " << pos +1 << endl;
         cout << "-----------------------------" << endl;
     }
+    friend ostream& operator<<(ostream& os, const Data& d) {
+        os << d.phone<<" " << d.name << " " << d.adres << " " << d.number << " " << d.pos;
+        return os;
+    }
+
+    friend istream& operator>>(istream& is, Data& d) {
+        is >> d.phone;
+        is >> d.name;
+        is >> d.adres;
+        is >> d.number;
+        return is;
+    }
+};
+
+
+class key_ {
+public:
+    string str_key;
+    int int_key;
+
+    key_() : str_key(""), int_key(0) {}
+    key_(const string& s, int i) : str_key(s), int_key(i) {}
+
+    bool operator==(const key_ other) const{
+        return this->str_key == other.str_key && this->int_key == other.int_key;
+    }
 };
 
 
 class HashTable {
+
     struct Entry {
-        string str_key;
-        int int_key;
+        key_ key;
         Data data;
         int status; // 0 - свободно, 1 - занято
     };
 
-    vektor<Entry> table;
+    Entry* table;
     int size;
 
     // Хеш-функция (середина квадрата)
-    int hash(const string& str_key, const int& int_key) const {
+    int hash(const key_& key) const {
         unsigned h = 0;
-        for (char c : str_key) h = h * 31 + c;
-        h += int_key;
+        for (char c : key.str_key) h = h * 31 + c;
+        h += key.int_key;
         h *= h;
         string s = to_string(h);
         int mid = s.length() / 2;
@@ -218,35 +191,40 @@ class HashTable {
     }
 
 public:
-    HashTable(int sz) : size(sz) {
-        table.resize(size);
-        for (int i = 0; i < size; ++i) {
+    HashTable(unsigned int sz) : size(sz) {
+
+        table = new Entry[size];
+
+        for (unsigned int i = 0; i < size; ++i) {
             table[i].status = 0;
         }
     }
 
+    ~HashTable() {
+        delete[] table;
+    }
+
     bool insert(const Data& d) {
-        string key = d.name.union_name();
-        int h = hash(key, d.number);
+        key_ key(d.name.union_name(),d.number);
+        int h = hash(key);
 
         for (int i = 0; i < size; ++i) {
             int idx = line_adresation(h, i);
 
             if (table[idx].status == 0) {
-                table[idx] = { key,d.number, d, 1 };
+                table[idx] = { key, d, 1 };
                 return true;
             }
 
-            if (table[idx].str_key == key && table[idx].int_key == d.number) {
+            if (table[idx].key == key) {
                 return false;
             }
         }
         return false; 
     }
 
-    const Data* search(const string& name, int req_num, int& steps) const {
-        string key = name;
-        int h = hash(key, req_num);
+    const Data* search(key_& key, int& steps) const {
+        int h = hash(key);
         steps = 0;
 
         for (int i = 0; i < size; ++i) {
@@ -254,22 +232,22 @@ public:
             int idx = line_adresation(h, i);
 
             if (table[idx].status == 0) return nullptr;
-            if (table[idx].status == 1 && table[idx].str_key == key && table[idx].int_key == req_num) {
+            if (table[idx].status == 1 && table[idx].key == key) {
+                cout << "Найдено в ячейке: "<< idx << endl;
                 return &table[idx].data;
             }
         }
         return nullptr;
     }
 
-    bool remove(const string& name, int req_num) {
-        string key = name;
-        int h = hash(key, req_num);
+    bool remove(key_& key) {
+        int h = hash(key);
 
         for (int i = 0; i < size; ++i) {
             int idx = line_adresation(h, i);
 
             if (table[idx].status == 0) return false;
-            if (table[idx].status == 1 && table[idx].str_key == key && table[idx].int_key == req_num) {
+            if (table[idx].status == 1 && table[idx].key == key) {
                 table[idx].status = 0;
                 return true;
             }
@@ -321,32 +299,114 @@ public:
     }
 };
 
-int main() {
-    setlocale(LC_ALL, "ru");
-    HashTable ht(100);
-
-    ht.loadFromFile("input.txt");
-    cout << "Введите ключ:" << endl;
+key_ input_from_keyboard() {
     Full_Name key;
     int int_key = 0;
-    cin >> key.last_name;
-    cin >> key.first_name;
-    cin >> key.second_name;
+    cin >> key;
     cin >> int_key;
-    cout << endl;
-
     string str_key = key.union_name();
-    int steps;
-    const Data* found = ht.search(str_key, int_key, steps);
-    if (found) {
-        cout << "Найдено за " << steps << " шагов:\n";
-        found->print();
-    }
-    else {
-        cout << "Не найдено\n";
-    }
+    
+    key_ ready_key(str_key, int_key);
+    
+    return ready_key;
+}
 
-    ht.saveToFile("output.txt");
+void menu() {
+   
+    cout << "1. Поиск по ключу" << endl;
+    cout << "2. Вставить элемент" << endl;
+    cout << "3. Удалить элемент" << endl;
+    cout << "4. Считать из файла" << endl;
+    cout << "5. Записать в файл" << endl;
+    cout << "6. Вывести таблицу" << endl;
+    cout << "7. Выход" << endl;
+}
+
+int main() {
+    setlocale(LC_ALL, "ru");
+
+    unsigned int size = 0;
+    cout << "Введите размер хеш-таблицы: ";
+    cin >> size;
+    HashTable ht(size);
+    bool loaded = false;
+
+    int choice;
+    do {
+        menu();
+        cout << "Выберите действие: ";
+        cin >> choice;
+
+        switch (choice) {
+        case 1: { // Поиск по ключу
+            cout << "Введите ключ поиска (ФИО и номер заявки):" << endl;
+            key_ key = input_from_keyboard();
+            int steps;
+            const Data* found = ht.search(key, steps);
+            if (found) {
+                cout << "Найдено за " << steps << " шагов:\n";
+                found->print();
+            }
+            else {
+                cout << "Не найдено\n";
+            }
+            break;
+        }
+        case 2: { // Вставка элемента
+            cout << "Введите данные для вставки (телефон, ФИО, адрес, номер заявки):" << endl;
+            Data d;
+            cin >> d;
+            if (ht.insert(d)) {
+                cout << "Вставлено успешно" << endl;
+            }
+            else {
+                cout << "Не удалось вставить" << endl;
+            }
+            break;
+        }
+        case 3: { // Удаление элемента
+            cout << "Введите ключ удаления (ФИО и номер заявки):" << endl;
+            key_ key = input_from_keyboard();
+            if (ht.remove(key)) {
+                cout << "Удалено успешно" << endl;
+            }
+            else {
+                cout << "Не найдено для удаления" << endl;
+            }
+            break;
+        }
+        case 4: { // Загрузка из файла
+            if (!loaded) {
+                ht.loadFromFile("input.txt");
+                loaded = true;
+                cout << "Данные загружены из файла" << endl;
+            }
+            else {
+                cout << "Данные уже были загружены ранее" << endl;
+            }
+            break;
+        }
+        case 5: { // Сохранение в файл
+            ht.saveToFile("output.txt");
+            cout << "Данные сохранены в файл output.txt" << endl;
+            break;
+        }
+        case 6: { // Вывод таблицы
+            cout << "Содержимое хеш-таблицы:" << endl;
+            ht.print();
+            break;
+        }
+        case 7: { // Выход
+            cout << "Завершение программы" << endl;
+            break;
+        }
+        default: {
+            cout << "Неверный выбор, попробуйте снова" << endl;
+            break;
+        }
+        }
+        cout << "_____________________________" << endl;
+    } while (choice != 7);
 
     return 0;
 }
