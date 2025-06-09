@@ -6,6 +6,8 @@
 *.ilk
 *.obj
 *.exe
+*.sln
+*.vcxproj
 x64/
 Debug/
 Release/
