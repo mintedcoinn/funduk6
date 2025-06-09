@@ -122,18 +122,18 @@ struct Data {
     Full_Name name;     
     Adress adres;       
     int number;         
-    int pos;            // Позиция в исходном файле
+    int pos = -1;            // Позиция в исходном файле
 
     void print() const {
         cout << "Номер телефона: " << phone << endl;
         cout << "ФИО: " << name << endl;
         cout << "Адрес: " << adres << endl;
         cout << "Номер заявки: " << number << endl;
-        cout << "Позиция в исходном файле: " << pos +1 << endl;
+        (pos + 1 > 0) ? cout << "Позиция в исходном файле: " << pos + 1 << endl : cout << "Строка вставлена вручную" << endl;
         cout << "-----------------------------" << endl;
     }
     friend ostream& operator<<(ostream& os, const Data& d) {
-        os << d.phone<<" " << d.name << " " << d.adres << " " << d.number << " " << d.pos;
+        os << d.phone<<" " << d.name << " " << d.adres << " " << d.number;
         return os;
     }
 
@@ -174,16 +174,25 @@ class HashTable {
 
     // Хеш-функция (середина квадрата)
     int hash(const key_& key) const {
-        unsigned h = 0;
+        unsigned long long h = 0;
         for (char c : key.str_key) h = h * 31 + c;
+        //cout << h << endl;
         h += key.int_key;
+        //cout << h << endl;
         h *= h;
+        //cout << h << endl;
         string s = to_string(h);
         int mid = s.length() / 2;
-        string part = s.substr(max(0, mid - 1), 3);
-
+        //cout << mid << endl;
+        string part = s.substr(mid - 1, 3);
+        //cout << part<<endl;
         return stoi(part) % size;
     }
+    /*№	str_key	int_key	Формула	h	h²	Хеш (% 100)
+1	"aaa"	27154	96321 + 27154 = 123475	123475	15246075625	7
+2	"aab"	27153	96322 + 27153 = 123475	123475	15246075625	7
+3	"abb"	27122	96353 + 27122 = 123475	123475	15246075625	7
+*/
 
     // Линейная адресация
     int line_adresation(int hash, int attempt) const {
@@ -247,8 +256,19 @@ public:
             int idx = line_adresation(h, i);
 
             if (table[idx].status == 0) return false;
+
             if (table[idx].status == 1 && table[idx].key == key) {
                 table[idx].status = 0;
+
+                for (int jdx =size - 1; jdx > idx; jdx--) {
+                    //int jdx = line_adresation(h, j);
+                    if (table[jdx].status == 1 && hash(table[jdx].key) == h) {
+                        table[idx].key = table[jdx].key;
+                        table[idx].data = table[jdx].data;
+                        table[idx].status = 1;
+                        table[jdx].status = 0;
+                    }
+                }
                 return true;
             }
         }
@@ -369,11 +389,13 @@ int main() {
             key_ key = input_from_keyboard();
             if (ht.remove(key)) {
                 cout << "Удалено успешно" << endl;
+                break;
             }
             else {
                 cout << "Не найдено для удаления" << endl;
+                break;
             }
-            break;
+            
         }
         case 4: { // Загрузка из файла
             if (!loaded) {
@@ -406,7 +428,7 @@ int main() {
         }
         }
         cout << "_____________________________" << endl;
-    } while (choice != 7);
+    } while (choice < 7);
 
     return 0;
 }
